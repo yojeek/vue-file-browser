@@ -1,37 +1,25 @@
 <script setup lang="ts">
 // @ts-ignore
-import {showDirectoryPicker, FileSystemDirectoryHandle} from 'native-file-system-adapter'
+import {showDirectoryPicker, FileSystemDirectoryHandle, FileSystemHandle} from 'native-file-system-adapter'
 import {ref} from "vue";
 import FileBrowser from "../lib/FileBrowser.vue";
 import type {Directory} from "../lib";
 import * as idb from 'idb-keyval';
-
-async function verifyPermission(fileHandle, readWrite) {
-  const options = {};
-
-  if (readWrite) {
-    options.mode = 'readwrite';
-  }
-
-  // Check if permission was already granted. If so, return true.
-  if ((await fileHandle.queryPermission(options)) === 'granted') {
-    return true;
-  }
-  // Request permission. If the user grants permission, return true.
-  if ((await fileHandle.requestPermission(options)) === 'granted') {
-    return true;
-  }
-  // The user didn't grant permission, so return false.
-  return false;
-}
+import {verifyPermission} from "./helpers.ts";
 
 const rootDirectory = ref<Directory | null>(null);
-const rootDirectoryFromStorage = await idb.get<Directory>('rootDirectory');
 
-if (rootDirectoryFromStorage) {
-  await verifyPermission(rootDirectoryFromStorage, true);
+async function getStoredRoot() {
+  rootDirectory.value = null;
+  const rootDirectoryFromStorage = await idb.get<FileSystemDirectoryHandle>('rootDirectory');
 
-  rootDirectory.value = await listingToDirectoryRecursive(rootDirectoryFromStorage);
+  if (rootDirectoryFromStorage) {
+    await verifyPermission(rootDirectoryFromStorage, true);
+
+    rootDirectory.value = await listingToDirectoryRecursive(rootDirectoryFromStorage);
+  } else {
+    alert('no root directory stored')
+  }
 }
 
 async function onOpenDirectory() {
@@ -65,8 +53,20 @@ async function listingToDirectoryRecursive(blob: FileSystemDirectoryHandle): Pro
   return result
 }
 
-function selectFile(file: File) {
+
+const fileContent = ref<string | null>(null);
+
+const storedFile = await idb.get<File>('file');
+
+if (storedFile) {
+  fileContent.value = (await storedFile.text()).slice(0, 100);
+}
+
+async function selectFile(file: FileSystemHandle) {
   console.log('selectFile', file)
+  let fileBlob = await file.handle.getFile();
+  idb.set('file', fileBlob);
+  fileContent.value = (await fileBlob.text()).slice(0, 100);
 }
 
 function changeDirectory(directory: Directory) {
@@ -77,11 +77,14 @@ function changeDirectory(directory: Directory) {
 
 <template>
   <button @click="onOpenDirectory">Open Directory</button>
+  <button @click="getStoredRoot">Get Stored Directory</button>
   <FileBrowser v-if="rootDirectory"
                @select-file="selectFile"
                @change-directory="changeDirectory"
                :rootDirectory="rootDirectory"
   />
+  <p>Stored File Content</p>
+  <pre v-if="fileContent">{{ fileContent }}</pre>
 </template>
 
 <style scoped>

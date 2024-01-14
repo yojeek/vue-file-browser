@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import {ref} from 'vue'
-import {get, set} from 'idb-keyval';
 import * as browserFs from 'browser-fs-access';
 import type {FileWithDirectoryAndFileHandle} from "browser-fs-access";
 
 const browserFsSupported = ref(browserFs.supported);
-const directoryListing = ref([]);
+const directoryListing = ref<any[]>([]);
 
 async function onOpenDirectory() {
   const blobs = await browserFs.directoryOpen({
@@ -23,7 +22,7 @@ type Directory = {
 }
 
 function listingToDirectory(blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[]): Directory {
-  const files: File[] = [];
+  const files: string[] = [];
   const directories = new Set<string>();
 
   for (const blob of blobs) {
