@@ -5,16 +5,16 @@ import {ref} from "vue";
 import FileBrowser from "../lib/FileBrowser.vue";
 import type {Directory} from "../lib";
 import * as idb from 'idb-keyval';
-import {verifyPermission} from "./helpers.ts";
+import {verifyDirectoryPermission, getFileFromCache, saveFileToCache} from "./helpers.ts";
 
 const rootDirectory = ref<Directory | null>(null);
 
 async function getStoredRoot() {
   rootDirectory.value = null;
-  const rootDirectoryFromStorage = await idb.get<FileSystemDirectoryHandle>('rootDirectory');
+  const rootDirectoryFromStorage = await idb.get('rootDirectory') as FileSystemDirectoryHandle;
 
   if (rootDirectoryFromStorage) {
-    await verifyPermission(rootDirectoryFromStorage, true);
+    await verifyDirectoryPermission(rootDirectoryFromStorage, true);
 
     rootDirectory.value = await listingToDirectoryRecursive(rootDirectoryFromStorage);
   } else {
@@ -53,20 +53,39 @@ async function listingToDirectoryRecursive(blob: FileSystemDirectoryHandle): Pro
   return result
 }
 
+async function getStoredFileFromCache() {
+  const storedFile = await getFileFromCache('file');
+
+  if (storedFile) {
+    fileContent.value = (await storedFile.text()).slice(0, 100);
+  } else {
+    alert('no file stored')
+  }
+}
 
 const fileContent = ref<string | null>(null);
 
-const storedFile = await idb.get<File>('file');
-
-if (storedFile) {
-  fileContent.value = (await storedFile.text()).slice(0, 100);
+async function selectFile(file: FileSystemHandle) {
+  let fileBlob = await file.handle.getFile();
+  await idb.set('fileHandle', file.handle);
+  await saveFileToCache('file', fileBlob);
+  fileContent.value = (await fileBlob.text()).slice(0, 100);
 }
 
-async function selectFile(file: FileSystemHandle) {
-  console.log('selectFile', file)
-  let fileBlob = await file.handle.getFile();
-  idb.set('file', fileBlob);
-  fileContent.value = (await fileBlob.text()).slice(0, 100);
+async function getStoredFile() {
+  const fileHandle = await idb.get('fileHandle') as FileSystemFileHandle;
+
+  if (fileHandle) {
+    await getStoredRoot();
+    try {
+      const fileBlob = await fileHandle.getFile();
+      fileContent.value = (await fileBlob.text()).slice(0, 100);
+    } catch (e: Error) {
+      alert(e.name + ': ' + e.message)
+    }
+  } else {
+    alert('no file stored')
+  }
 }
 
 function changeDirectory(directory: Directory) {
@@ -78,6 +97,8 @@ function changeDirectory(directory: Directory) {
 <template>
   <button @click="onOpenDirectory">Open Directory</button>
   <button @click="getStoredRoot">Get Stored Directory</button>
+  <button @click="getStoredFile">Get Stored File</button>
+  <button @click="getStoredFileFromCache">Get Stored File From Cache</button>
   <FileBrowser v-if="rootDirectory"
                @select-file="selectFile"
                @change-directory="changeDirectory"
