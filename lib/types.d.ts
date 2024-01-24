@@ -1,7 +1,7 @@
-export type File = { name: string, handle?: any };
+export type FileBrowserFile = { name: string, handle?: any };
 
-export type Directory = {
+export type FileBrowserDirectory = {
     name: string;
-    files: File[];
-    directories: Directory[];
+    files: FileBrowserFile[];
+    directories: FileBrowserDirectory[];
 }

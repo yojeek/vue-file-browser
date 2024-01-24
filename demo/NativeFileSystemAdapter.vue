@@ -1,13 +1,15 @@
 <script setup lang="ts">
 // @ts-ignore
-import {showDirectoryPicker, FileSystemDirectoryHandle, FileSystemHandle} from 'native-file-system-adapter'
+import {showDirectoryPicker} from 'native-file-system-adapter';
+// @ts-ignore
+import type {FileSystemDirectoryHandle, FileSystemHandle} from 'native-file-system-adapter';
 import {ref} from "vue";
 import FileBrowser from "../lib/FileBrowser.vue";
-import type {Directory} from "../lib";
+import type {FileBrowserDirectory, FileBrowserFile} from "../lib/types";
 import * as idb from 'idb-keyval';
-import {verifyDirectoryPermission, getFileFromCache, saveFileToCache} from "./helpers.ts";
+import {verifyDirectoryPermission, getFileFromCache, saveFileToCache, listingToDirectoryRecursive} from "./helpers.ts";
 
-const rootDirectory = ref<Directory | null>(null);
+const rootDirectory = ref<FileBrowserDirectory | null>(null);
 
 async function getStoredRoot() {
   rootDirectory.value = null;
@@ -32,27 +34,6 @@ async function onOpenDirectory() {
   console.log(rootDirectory.value)
 }
 
-async function listingToDirectoryRecursive(blob: FileSystemDirectoryHandle): Promise<Directory> {
-  const result: Directory = {
-    name: blob.name,
-    files: [],
-    directories: []
-  };
-
-  for await (const entry of blob.values()) {
-    if (entry.kind === 'directory') {
-      result.directories.push(await listingToDirectoryRecursive(entry as unknown as FileSystemDirectoryHandle));
-    } else {
-      result.files.push({
-        name: entry.name,
-        handle: entry as unknown as FileSystemFileHandle
-      });
-    }
-  }
-
-  return result
-}
-
 async function getStoredFileFromCache() {
   const storedFile = await getFileFromCache('file');
 
@@ -65,7 +46,7 @@ async function getStoredFileFromCache() {
 
 const fileContent = ref<string | null>(null);
 
-async function selectFile(file: FileSystemHandle) {
+async function selectFile(file: FileBrowserFile) {
   let fileBlob = await file.handle.getFile();
   await idb.set('fileHandle', file.handle);
   await saveFileToCache('file', fileBlob);
@@ -80,18 +61,17 @@ async function getStoredFile() {
     try {
       const fileBlob = await fileHandle.getFile();
       fileContent.value = (await fileBlob.text()).slice(0, 100);
-    } catch (e: Error) {
-      alert(e.name + ': ' + e.message)
+    } catch (e: unknown) {
+      alert(`cant get file ${e} ${JSON.stringify(e)}`)
     }
   } else {
     alert('no file stored')
   }
 }
 
-function changeDirectory(directory: Directory) {
+function changeDirectory(directory: FileBrowserDirectory) {
   console.log('changeDirectory', directory)
 }
-
 </script>
 
 <template>

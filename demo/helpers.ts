@@ -1,5 +1,6 @@
 import {FileSystemDirectoryHandle} from "native-file-system-adapter/types/src/showDirectoryPicker";
 import * as idb from 'idb-keyval';
+import type {FileBrowserDirectory} from "../lib/types";
 
 export async function getFileFromCache(filename: string, collection?: string) : Promise<File | null> {
     const key = collection ? `${collection}:${filename}` : filename;
@@ -37,4 +38,25 @@ export async function verifyDirectoryPermission(handle: FileSystemDirectoryHandl
     }
     // The user didn't grant permission, so return false.
     return false;
+}
+
+export async function listingToDirectoryRecursive(blob: FileSystemDirectoryHandle): Promise<FileBrowserDirectory> {
+    const result: FileBrowserDirectory = {
+        name: blob.name,
+        files: [],
+        directories: []
+    };
+
+    for await (const entry of blob.values()) {
+        if (entry.kind === 'directory') {
+            result.directories.push(await listingToDirectoryRecursive(entry as unknown as FileSystemDirectoryHandle));
+        } else {
+            result.files.push({
+                name: entry.name,
+                handle: entry as unknown as FileSystemFileHandle
+            });
+        }
+    }
+
+    return result
 }

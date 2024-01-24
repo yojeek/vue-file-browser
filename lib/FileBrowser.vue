@@ -1,28 +1,28 @@
 <script lang="ts">
 import {ref} from 'vue';
-import type {Directory, File} from "./types";
+import type {FileBrowserDirectory, FileBrowserFile} from "./types";
 import {defineComponent, PropType} from "vue";
 
 export default defineComponent({
   name: 'FileBrowser',
   props: {
     rootDirectory: {
-      type: Object as PropType<Directory>,
+      type: Object as PropType<FileBrowserDirectory>,
       required: true
     }
   },
   setup(props, {emit}) {
-    const selectedFile = ref<File | null>(null);
-    const currentDirectory = ref<Directory>(props.rootDirectory);
+    const selectedFile = ref<FileBrowserFile | null>(null);
+    const currentDirectory = ref<FileBrowserDirectory>(props.rootDirectory);
 
-    const directoriesStack: Directory[] = [];
+    const directoriesStack: FileBrowserDirectory[] = [];
 
-    function selectFile(file: File) {
+    function selectFile(file: FileBrowserFile) {
       selectedFile.value = file;
       emit('select-file', file);
     }
 
-    function changeDirectory(directory: Directory) {
+    function changeDirectory(directory: FileBrowserDirectory) {
       directoriesStack.push(currentDirectory.value);
       currentDirectory.value = directory;
       emit('change-directory', directory);
@@ -30,7 +30,7 @@ export default defineComponent({
 
     function goUp() {
       if (directoriesStack.length > 0) {
-        currentDirectory.value = directoriesStack.pop() as Directory;
+        currentDirectory.value = directoriesStack.pop() as FileBrowserDirectory;
       }
     }
 
