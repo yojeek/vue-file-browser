@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import NativeFileSystemAdapter from "./NativeFileSystemAdapter.vue";
+import AssetBrowser from "./AssetBrowser.vue";
 </script>
 
 <template>
-  <Suspense>
-    <NativeFileSystemAdapter />
-  </Suspense>
+  <AssetBrowser />
 </template>
 
 <style scoped>

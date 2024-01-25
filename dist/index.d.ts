@@ -36,12 +36,12 @@ export declare const FileBrowser: DefineComponent<{
     "onChange-directory"?: ((...args: any[]) => any) | undefined;
 }, {}, {}>;
 
-export declare type FileBrowserDirectory = {
+declare type FileBrowserDirectory = {
     name: string;
     files: FileBrowserFile[];
     directories: FileBrowserDirectory[];
 }
 
-export declare type FileBrowserFile = { name: string, handle?: any };
+declare type FileBrowserFile = { name: string, handle?: any };
 
 export { }
