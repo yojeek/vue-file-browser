@@ -7,20 +7,22 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vue-tsc && vite build --emptyOutDir",
     "preview": "vite preview"
   },
   "peerDependencies": {
     "vue": "^3.3.11"
   },
   "devDependencies": {
+    "@babel/types": "^7.24.0",
+    "@vitejs/plugin-vue": "^4.5.2",
     "browser-fs-access": "^0.35.0",
     "idb-keyval": "^6.2.1",
     "native-file-system-adapter": "^3.0.0",
-    "vite-plugin-dts": "^3.7.0",
-    "@vitejs/plugin-vue": "^4.5.2",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
+    "vite-plugin-dts": "^3.7.0",
+    "vue": "^3.4.21",
     "vue-tsc": "^1.8.25"
   }
 }

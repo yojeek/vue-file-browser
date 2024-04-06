@@ -9,8 +9,6 @@ export default defineConfig({
       vue(),
       dts({
         include: 'lib/**/*.{ts,vue}',
-        // todo types from types.d.ts are not exported from dist/index.d.ts..
-        // for now workaround is to export them manually after build
         rollupTypes: true,
         copyDtsFiles: true,
       })
